@@ -2,7 +2,7 @@
 
 ## main page
 
-![alt text](image/image.png)
+![alt text](image/mainscreen.png)
 
 메인 실행 코드는 lib/main.dart입니다.
 
