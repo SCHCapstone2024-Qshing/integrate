@@ -16,7 +16,7 @@ pub.dev: https://pub.dev/packages/mobile_scanner
 
 github: https://github.com/juliansteenbakker/mobile_scanner
 
-## 추가로 설치가 필요한 패키지(혹시 더 있을 수도 있는데 정확하진 않음)
+## 추가로 설치가 필요한 패키지(더 있을 수도 있음)
 
 image_picker: ^1.0.4
 
