@@ -104,7 +104,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
     ).then((_) {});
   }
 
-//바코드가 감지되면 호출, 스캔한 바코드로 상태 업데이트, url을 virustotal에 제출, 스캔 보고서를 검색. _showScanReportDialog를 사용해서 보고서 표시
+//바코드가 감지되면 호출, 스캔한 바코드로 상태 업데이트, url을 virustotal에 제출, 스캔 보고서를 검색함. _showScanReportDialog를 사용해서 보고서 표시
   Future<void> _launchUrl(Uri url) async {
     if (!await launchUrl(url)) {
       throw Exception('Could not launch $url');
