@@ -54,11 +54,8 @@ class MyHome extends StatelessWidget {
 
 Future<void> imageSelect(BuildContext context) async {
   final MobileScannerController controller = MobileScannerController(
-    torchEnabled: true, useNewCameraSelector: true,
-    // formats: [BarcodeFormat.qrCode]
-    // facing: CameraFacing.front,
-    // detectionSpeed: DetectionSpeed.normal
-    // detectionTimeoutMs: 1000,
+    torchEnabled: true,
+    useNewCameraSelector: true,
     returnImage: true,
   );
   final ImagePicker picker = ImagePicker();
@@ -79,21 +76,23 @@ Future<void> imageSelect(BuildContext context) async {
   }
   late final String url;
   if (barcodes != null) {
-    print('-------------');
-    final Uri _url = Uri.parse(barcodes.barcodes.firstOrNull!.displayValue!);
-    url = _url.toString();
-    print(url);
-    print('--------------');
+    final Uri url0 = Uri.parse(barcodes.barcodes.firstOrNull!.displayValue!);
+    url = url0.toString();
   }
-  final SnackBar snackbar = barcodes != null
-      ? SnackBar(
-          content: Text(url),
-          backgroundColor: Colors.green,
-        )
-      : const SnackBar(
-          content: Text('QR code를 찾을 수 없습니다.'),
-          backgroundColor: Colors.red,
-        );
 
-  ScaffoldMessenger.of(context).showSnackBar(snackbar);
+  if (barcodes != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('URL: $url'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('QR code를 찾을 수 없습니다.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 }
