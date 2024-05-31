@@ -1,5 +1,6 @@
 // buildBarcode 함수에서 url 출력하는 함수 사용 중
 // 해당 함수 내부의 launchUrl 함수를 사용해 해당 url을 처리할 수 있을 것으로 보임
+//스캔한 URL을 VirusTotal에 제출하여 스캔한 보고서를 사용자에게 표시하는 기능 추가
 
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -23,7 +24,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
     super.initState();
     _virusTotalService = VirusTotalService(
         apiKey:
-            '4642fb3585fe6d00495d2395b2c0ab4a6c1363ad5a76b0f5d7807ae3b872687b'); // Replace with your actual API key
+            '4642fb3585fe6d00495d2395b2c0ab4a6c1363ad5a76b0f5d7807ae3b872687b');
   }
 
   Widget _buildBarcode(Barcode? value) {
@@ -66,7 +67,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
 
     showDialog(
       context: context,
-      barrierDismissible: false, // Prevent dialog from closing on tap outside
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
           title: const Text('VirusTotal Scan Report'),
@@ -92,7 +93,6 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
                 Navigator.of(context).pop();
                 if (stats['malicious'] == 0) {
                   await _launchUrl(url);
-                  // After launching URL, navigate back to initial screen
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 }
               },
@@ -101,12 +101,10 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
           ],
         );
       },
-    ).then((_) {
-      // Handle dialog closed (back button or dismissed)
-      // You can add code here to handle other actions after the dialog is closed
-    });
+    ).then((_) {});
   }
 
+//바코드가 감지되면 호출, 스캔한 바코드로 상태 업데이트, url을 virustotal에 제출, 스캔 보고서를 검색. _showScanReportDialog를 사용해서 보고서 표시
   Future<void> _launchUrl(Uri url) async {
     if (!await launchUrl(url)) {
       throw Exception('Could not launch $url');

@@ -1,3 +1,5 @@
+//virustotal api와 상호작용, url을 스캔하고 스캔 보고서를 가져오는 기능
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -23,6 +25,7 @@ class VirusTotalService {
     }
   }
 
+//url 스캔을 위해 virustotal로 보냄
   Future<Map<String, dynamic>> getUrlScanReport(String analysisId) async {
     final response = await http.get(
       Uri.parse('https://www.virustotal.com/api/v3/analyses/$analysisId'),
