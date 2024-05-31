@@ -5,7 +5,7 @@
 //5.21 패키지 정리. 기존 만들어져있던 패키지는 mobile_scaner 패키지를 그대로 깃허브에서 clone 해 온 것이기 때문에 기본 설정과 다르고 난잡한 부분이 많았다.
 //     그래서 아예 패키지를 새로 만들어서 필요한 코드만 넣는 식으로 초기화 시키면서 정리했음.
 //     변경점: android/app/build.gradle 의 minSdkVersion과 targetSdkVersion의 값을 각각 21, 34로 수정하여 버전문제로 에러 나던 것 해결
-
+//기존 코드에 virustotal api 연결 추가
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
