@@ -79,10 +79,10 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
                 Text('Malicious: ${stats['malicious']}'),
                 const SizedBox(height: 10),
                 if (stats['malicious'] > 0)
-                  const Text('This URL is malicious!',
+                  const Text('악성코드가 발견되었습니다!',
                       style: TextStyle(color: Colors.red)),
                 if (stats['malicious'] == 0)
-                  const Text('This URL is safe!',
+                  const Text('악성코드가 발견되지 않았습니다!',
                       style: TextStyle(color: Colors.green)),
               ],
             ),
@@ -104,7 +104,8 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
     ).then((_) {});
   }
 
-//바코드가 감지되면 호출, 스캔한 바코드로 상태 업데이트, url을 virustotal에 제출, 스캔 보고서를 검색함. _showScanReportDialog를 사용해서 보고서 표시
+//VirusTotal 보고서를 기반으로 사용자에게 스캔 결과를 표시
+//stats['malicious'] 값이 0보다 크면 악성 URL로 판단하고, 그렇지 않으면 안전한 URL로 판단
   Future<void> _launchUrl(Uri url) async {
     if (!await launchUrl(url)) {
       throw Exception('Could not launch $url');
