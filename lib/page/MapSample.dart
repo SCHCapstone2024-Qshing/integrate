@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class MapSample extends StatefulWidget {
   const MapSample({super.key});
@@ -17,38 +18,43 @@ class MapSampleState extends State<MapSample> {
   @override
   void initState() {
     super.initState();
-    _loadCircles(); // 화면 로딩 시 원 데이터 불러오기
+    _loadCirclesFromApi(); // 화면 로딩 시 API에서 원 데이터 불러오기
   }
 
-  Future<void> _loadCircles() async {
-    // Firestore에서 모든 'location' 문서를 가져옵니다.
-    QuerySnapshot snapshot =
-    await FirebaseFirestore.instance.collection('location').get();
-    Set<Circle> loadedCircles = {};
+  Future<void> _loadCirclesFromApi() async {
+    try {
+      final response = await http.get(Uri.parse(
+          'http://172.30.1.86:3000/cities')); //API Server로 요청 꼭 주소형태로 요청해야 함 localhost 안 됨
 
-    for (var doc in snapshot.docs) {
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        Set<Circle> loadedCircles = {};
 
-      // 각 문서에서 위도, 경도, 반경 데이터를 읽습니다.
-      double lat = (data['latitude'] as num).toDouble();
-      double lng = (data['longitude'] as num).toDouble();
-      double radius = (data['radius'] as num).toDouble();
+        data.forEach((city, value) {
+          double lat = value['latitude'];
+          double lng = value['longitude'];
+          double radius = 1000.0; // 기본 반경 값 설정
 
-      // 새 Circle 객체를 생성하여 Set에 추가합니다.
-      loadedCircles.add(Circle(
-        circleId: CircleId(doc.id), // 문서 ID를 사용하여 고유한 CircleId 생성
-        center: LatLng(lat, lng),
-        radius: radius,
-        fillColor: Colors.red.withOpacity(0.5),
-        strokeColor: Colors.red,
-        strokeWidth: 2,
-      ));
+          loadedCircles.add(Circle(
+            circleId: CircleId(city),
+            center: LatLng(lat, lng),
+            radius: radius,
+            fillColor: Colors.red.withOpacity(0.5),
+            strokeColor: Colors.red,
+            strokeWidth: 2,
+          ));
+        });
+
+        // State 업데이트
+        setState(() {
+          _circles = loadedCircles;
+        });
+      } else {
+        throw Exception('Failed to load data from API');
+      }
+    } catch (e) {
+      print('Error loading circles from API: $e');
     }
-
-    // State 업데이트
-    setState(() {
-      _circles = loadedCircles;
-    });
   }
 
   @override

@@ -7,10 +7,12 @@ plugins {
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
+    localPropertiesFile.withInputStream { stream ->
+        localProperties.load(stream)
     }
 }
+
+def googleMapsApiKey = localProperties.getProperty('googleMapsApiKey') ?: ""
 
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
 if (flutterVersionCode == null) {
@@ -49,6 +51,10 @@ android {
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        manifestPlaceholders = [
+            googleMapsApiKey: googleMapsApiKey,
+            applicationName: "com.example.qrcode_scanner_camera"
+        ]
     }
 
     buildTypes {

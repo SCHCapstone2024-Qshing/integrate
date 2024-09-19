@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -8,8 +7,6 @@ import '/page/barcode_scanner_simple.dart';
 import '/page/MapSample.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  //await Firebase.initializeApp(); //해당 코드 쓰면 무한 로딩함(갤럭시 핸드폰)
   runApp(
     const MaterialApp(
       title: 'QR Code Scan',
@@ -40,7 +37,6 @@ class BarcodeScannerScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-
                 Opacity(
                   opacity: buttonOpacity,
                   child: SizedBox(
@@ -52,7 +48,6 @@ class BarcodeScannerScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 Opacity(
                   opacity: buttonOpacity,
                   child: SizedBox(
@@ -62,7 +57,8 @@ class BarcodeScannerScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const MapSample()),
+                          MaterialPageRoute(
+                              builder: (context) => const MapSample()),
                         );
                       },
                       child: const Text('Map'),
@@ -104,23 +100,21 @@ Future<void> imageSelect(BuildContext context) async {
   late final String url;
   if (barcodes != null) {
     print('-------------');
-    final Uri _url = Uri.parse(barcodes.barcodes.firstOrNull!.displayValue!);
-    url = _url.toString();
+    final Uri url0 = Uri.parse(barcodes.barcodes.firstOrNull!.displayValue!);
+    url = url0.toString();
     print(url);
     print('--------------');
   }
 
   final SnackBar snackbar = barcodes != null
       ? SnackBar(
-    content: Text(url),
-    backgroundColor: Colors.green,
-  )
+          content: Text(url),
+          backgroundColor: Colors.green,
+        )
       : const SnackBar(
-    content: Text('QR code를 찾을 수 없습니다.'),
-    backgroundColor: Colors.red,
-  );
+          content: Text('QR code를 찾을 수 없습니다.'),
+          backgroundColor: Colors.red,
+        );
 
   ScaffoldMessenger.of(context).showSnackBar(snackbar);
 }
-
-

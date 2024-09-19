@@ -13,7 +13,8 @@ abstract class MobileScannerPlatform extends PlatformInterface {
 
   static final Object _token = Object();
 
-  static MobileScannerPlatform _instance = MethodChannelMobileScanner();
+  static MobileScannerPlatform _instance =
+      MethodChannelMobileScanner() as MobileScannerPlatform;
 
   /// The default instance of [MobileScannerPlatform] to use.
   ///
