@@ -25,10 +25,11 @@ class VirusTotalService {
     }
   }
 
+//https://www.virustotal.com/api/v3/urls/{추가 id}
 //url 스캔을 위해 virustotal로 보냄
   Future<Map<String, dynamic>> getUrlScanReport(String analysisId) async {
     final response = await http.get(
-      Uri.parse('https://www.virustotal.com/api/v3/analyses/$analysisId'),
+      Uri.parse('https://www.virustotal.com/api/v3/analyses/${analysisId}'),
       headers: {
         'x-apikey': apiKey,
       },

@@ -4,12 +4,19 @@
 
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '/services/virustotal_service.dart';
 import '/page/error/scanner_error_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '/services/url_scan.dart';
+
+//고쳐야할 것. qr code 스캔이 되고 작업을 진행 중인데도 계속해서 qr code를 스캔. 알림창이 여러개가 뜸.(스캔 이후 카메라 스탑시키기)
+//controller 추가(작동여부 불확실)
+//카메라로 qrcode 스캔시 _showErrorDialog 함수 실행 됨
+//링크 안전 여부 알려준 후 접속 할 건지 yes/ no 버튼 만들기
 
 class BarcodeScannerSimple extends StatefulWidget {
-  const BarcodeScannerSimple({super.key});
+  final UrlScan urlCheck;
+  const BarcodeScannerSimple({required this.urlCheck, super.key});
+  //const BarcodeScannerSimple({Key? key, required this.urlCheck}) : super(key: key);
 
   @override
   State<BarcodeScannerSimple> createState() => _BarcodeScannerSimpleState();
@@ -17,14 +24,15 @@ class BarcodeScannerSimple extends StatefulWidget {
 
 class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
   Barcode? _barcode;
-  late VirusTotalService _virusTotalService;
+  UrlScan? urlCheck;
+
+  //late VirusTotalService _virusTotalService;
 
   @override
   void initState() {
+    urlCheck = UrlScan();
+    urlCheck!.initState();
     super.initState();
-    _virusTotalService = VirusTotalService(
-        apiKey:
-            '4642fb3585fe6d00495d2395b2c0ab4a6c1363ad5a76b0f5d7807ae3b872687b');
   }
 
   Widget _buildBarcode(Barcode? value) {
@@ -50,10 +58,12 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
       if (_barcode != null && _barcode!.displayValue != null) {
         final Uri url = Uri.parse(_barcode!.displayValue!);
         try {
-          final scanResult = await _virusTotalService.scanUrl(url.toString());
-          final analysisId = scanResult['data']['id'];
-          final report = await _virusTotalService.getUrlScanReport(analysisId);
-          _showScanReportDialog(report, url);
+          final malicious = await urlCheck!.isMalicious(url.toString());
+          // final scanResult = await _virusTotalService.scanUrl(url.toString());
+          // final analysisId = scanResult['data']['id'];
+          // //전처리 필요
+          // final report = await _virusTotalService.getUrlScanReport(analysisId);
+          _showScanReportDialog(malicious, url);
         } catch (e) {
           _showErrorDialog(e.toString());
         }
@@ -61,10 +71,10 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
     }
   }
 
-  void _showScanReportDialog(Map<String, dynamic> report, Uri url) {
-    final attributes = report['data']['attributes'];
-    final stats = attributes['stats'];
-
+  void _showScanReportDialog(int num, Uri url) {
+    // final attributes = report['data']['attributes'];
+    // final stats = attributes['stats'];
+//변수 이름 data.attribute.last_analysis_stats.harmless
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -75,15 +85,15 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Total Scans: ${stats['total']}'),
-                Text('Malicious: ${stats['malicious']}'),
+                Text('Malicious: $num'),
                 const SizedBox(height: 10),
-                if (stats['malicious'] > 0)
+                if (num > 0)
                   const Text('악성코드가 발견되었습니다!',
                       style: TextStyle(color: Colors.red)),
-                if (stats['malicious'] == 0)
+                if (num == 0)
                   const Text('악성코드가 발견되지 않았습니다!',
                       style: TextStyle(color: Colors.green)),
+                //접속하시겠습니까? yes/no 버튼
               ],
             ),
           ),
@@ -91,8 +101,8 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
             TextButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                if (stats['malicious'] == 0) {
-                  await _launchUrl(url);
+                if (num == 0) {
+                  //await _launchUrl(url);
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 }
               },
@@ -135,7 +145,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('QRcode Scan')),
+      appBar: AppBar(title: const Text('QR Code Scan')),
       backgroundColor: Colors.black,
       body: Stack(
         children: [
