@@ -24,8 +24,6 @@ image_picker: ^1.0.4
 
 flutter_dotenv(버전 상관없음)
 
-
-
 ##사전 작업
 
 1. .env 파일을 최상위 폴더에 생성.
