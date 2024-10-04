@@ -12,6 +12,7 @@ import '/services/url_scan.dart';
 //controller 추가(작동여부 불확실)
 //카메라로 qrcode 스캔시 _showErrorDialog 함수 실행 됨
 //링크 안전 여부 알려준 후 접속 할 건지 yes/ no 버튼 만들기
+//QR 코드가 스캔된 후 controller.stop()를 호출하여 카메라가 반복적으로 인식하는 문제를 해결하려함. +추가된 부분에 표시함
 
 class BarcodeScannerSimple extends StatefulWidget {
   final UrlScan urlCheck;
@@ -25,6 +26,8 @@ class BarcodeScannerSimple extends StatefulWidget {
 class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
   Barcode? _barcode;
   UrlScan? urlCheck;
+  final MobileScannerController controller =
+      MobileScannerController(); //mobilescannercontroller 추가된부분
 
   //late VirusTotalService _virusTotalService;
 
@@ -50,6 +53,24 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
     );
   }
 
+  Future<void> showLoadingDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('결과 로딩중...'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _handleBarcode(BarcodeCapture barcodes) async {
     if (mounted) {
       setState(() {
@@ -57,14 +78,32 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
       });
       if (_barcode != null && _barcode!.displayValue != null) {
         final Uri url = Uri.parse(_barcode!.displayValue!);
+
+        // 로딩 다이얼로그 표시
+        await showLoadingDialog();
+
         try {
           final malicious = await urlCheck!.isMalicious(url.toString());
           // final scanResult = await _virusTotalService.scanUrl(url.toString());
           // final analysisId = scanResult['data']['id'];
           // //전처리 필요
           // final report = await _virusTotalService.getUrlScanReport(analysisId);
+
+          // 2초 대기
+          await Future.delayed(const Duration(seconds: 2));
+
+          // 다이얼로그 닫기
+          Navigator.of(context).pop();
+
+          // 결과 다이얼로그 표시
           _showScanReportDialog(malicious, url);
+
+          _showScanReportDialog(malicious, url);
+          // 카메라 멈추기
+          controller.stop(); // 추가된 부분
         } catch (e) {
+          // 다이얼로그 닫기
+          Navigator.of(context).pop();
           _showErrorDialog(e.toString());
         }
       }
@@ -150,6 +189,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
       body: Stack(
         children: [
           MobileScanner(
+            controller: controller, // 추가된 부분
             onDetect: _handleBarcode,
             errorBuilder: (context, error, child) {
               return ScannerErrorWidget(error: error);
