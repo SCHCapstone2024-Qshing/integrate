@@ -79,6 +79,8 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
       if (_barcode != null && _barcode!.displayValue != null) {
         final Uri url = Uri.parse(_barcode!.displayValue!);
 
+        controller.stop(); // 추가된 부분, 카메라 멈추기
+
         // 로딩 다이얼로그 표시
         await showLoadingDialog();
 
@@ -95,12 +97,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
           // 다이얼로그 닫기
           Navigator.of(context).pop();
 
-          // 결과 다이얼로그 표시
           _showScanReportDialog(malicious, url);
-
-          _showScanReportDialog(malicious, url);
-          // 카메라 멈추기
-          controller.stop(); // 추가된 부분
         } catch (e) {
           // 다이얼로그 닫기
           Navigator.of(context).pop();
