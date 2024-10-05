@@ -123,7 +123,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       }
     }
     if (barcodes != null) {
-      print('111111111');
       final currentContext = context;
       final malicious = await urlCheck.isMalicious(url);
       if (!currentContext.mounted) return;
