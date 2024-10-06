@@ -6,7 +6,6 @@ class UrlScan {
   late VirusTotalService _virusTotalService;
 
   void initState() async {
-    print('init');
     _virusTotalService = VirusTotalService(apiKey: dotenv.get("VIRUSTOTALAPI"));
   }
 

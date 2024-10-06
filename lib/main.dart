@@ -14,55 +14,20 @@
 // 카메라 역할을 하는 barcode_scanner_simple에서 바코드를 스캔했을 때도 새로 만든 함수를 이용해 malicious 값을 가져오게 할 예정
 // 9.28 카메라로 스캔해도 정상적으로 malicious 값을 가져오는 것을 확임 현재 문제가 1번째 요청을 했을 때 가끔씩 0을 리턴하는 것인데 아마 요청을 받아오기 전에 실행이 되기 때문에 발행하는 문제인 것으로 보임
 // 스캔 이후 잠시 기다리라는 로딩 문구와 일정시간 기다리는 구문을 추가할 예정()
-// new main의 내용도 대부분 main으로 이동 완료. 추후에 newmain 파일은 삭제예정
+// new main의 내용도 대부분 main으로 이동 완료. 추후에 newmain 파일은 삭제예정-삭제완료
+//10.5 맵 연동 시작
+//google_maps_flutter: ^2.6.1 pubspec.yaml 파일에 추가. backend 폴더 추가. MapSample.dart 파일 추가
+//main file 수정(노션에 나와있던 app/ 밑 파일도 일부 수정)
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '/page/barcode_scanner_simple.dart';
 import '/services/url_scan.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '/page/MapSample.dart';
 
 import 'dart:async';
-// void main() {
-//   runApp(
-//     const MaterialApp(
-//       title: 'QRcode Scan',
-//       home: MyHome(),
-//     ),
-//   );
-// }
-
-// class MyHome extends StatelessWidget {
-//   const MyHome({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('QR Code Scan')),
-//       body: Center(
-//         child: Row(
-//           mainAxisAlignment: MainAxisAlignment.spaceAround,
-//           children: [
-//             ElevatedButton(
-//               onPressed: () {
-//                 Navigator.of(context).push(
-//                   MaterialPageRoute(
-//                     builder: (context) => const BarcodeScannerSimple(),
-//                   ),
-//                 );
-//               },
-//               child: const Text('Camera'),
-//             ),
-//             ElevatedButton(
-//               onPressed: () => imageSelect(context),
-//               child: const Text('Gallery'),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -79,7 +44,7 @@ class BarcodeScannerScreen extends StatefulWidget {
   const BarcodeScannerScreen({super.key});
 
   @override
-  _BarcodeScannerScreenState createState() => _BarcodeScannerScreenState();
+  State<BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
 }
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
@@ -183,7 +148,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const SecondPage()),
+                              builder: (context) => const MapSample()),
                         );
                       },
                       child: const Text('Map'),

@@ -24,7 +24,11 @@ image_picker: ^1.0.4
 
 flutter_dotenv(버전 상관없음)
 
+google_maps_flutter: ^2.6.1
+
 ## 사전 작업
+
+### Virustotal API
 
 1. .env 파일을 최상위 폴더에 생성.
 
@@ -33,3 +37,7 @@ flutter_dotenv(버전 상관없음)
 VIRUSTOTALAPI="API_KEY"
 ```
 "" 기호는 필요 없고 API키는 가지고 있는 VIRUSTOTALAPI 값을 넣으면 됨.(띄어쓰기 x)
+
+### Google Map API
+
+![alt text](https://github.com/SCHCapstone2024-Qshing/virustotal_api/blob/main/image/map_image.jpg)
