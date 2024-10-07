@@ -130,19 +130,25 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
                   const Text('악성코드가 발견되지 않았습니다!',
                       style: TextStyle(color: Colors.green)),
                 //접속하시겠습니까? yes/no 버튼
+                const Text('이 URL로 이동하시겠습니까?'),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop();
-                if (num == 0) {
-                  //await _launchUrl(url);
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                }
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+                await _launchUrl(url); // Yes를 누르면 URL 열기
+                controller.start(); // 카메라 재시작
               },
-              child: const Text('OK'),
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+                controller.start(); // 카메라 재시작
+              },
+              child: const Text('No'),
             ),
           ],
         );
