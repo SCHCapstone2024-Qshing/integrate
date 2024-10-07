@@ -26,7 +26,7 @@ import '/page/barcode_scanner_simple.dart';
 import '/services/url_scan.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/page/MapSample.dart';
-
+import '/page/gallery_scan.dart'; // 새로 만든 gallery_scan.dart 파일 import
 import 'dart:async';
 
 void main() async {
@@ -49,12 +49,14 @@ class BarcodeScannerScreen extends StatefulWidget {
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   late UrlScan urlCheck;
+  late GalleryScan galleryScan;
 
   @override
   void initState() {
     super.initState(); // Call super.initState first
     urlCheck = UrlScan();
     urlCheck.initState(); // Initialize your UrlScan
+    galleryScan = GalleryScan(urlCheck);
   }
 
   Future<void> imageSelect(BuildContext context) async {
@@ -133,7 +135,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     width: buttonWidth,
                     height: buttonHeight,
                     child: ElevatedButton(
-                      onPressed: () => imageSelect(context),
+                      onPressed: () => galleryScan.imageSelect(context),
                       child: const Text('Gallery'),
                     ),
                   ),
