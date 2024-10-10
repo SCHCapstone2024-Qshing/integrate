@@ -3,13 +3,14 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
 class ApiService {
-  final String baseUrl = "http://172.30.1.86:3000"; // API 서버 URL
+  final String baseUrl = "http://172.30.1.71:3000"; // API 서버 URL
 
   // GET 요청: 모든 도시의 좌표 목록을 가져옴
   Future<List<dynamic>?> fetchCities() async {
     final response = await http.get(Uri.parse('$baseUrl/cities'));
 
     if (response.statusCode == 200) {
+      print("cities request!");
       return jsonDecode(response.body) as List<dynamic>; // 데이터를 리스트로 반환
     } else {
       print('Failed to load cities');

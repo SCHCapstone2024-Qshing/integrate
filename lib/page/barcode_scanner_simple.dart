@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '/page/error/scanner_error_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '/services/url_scan.dart';
 import 'package:geolocator/geolocator.dart'; // 위치 정보 가져오기
+import '/page/error/scanner_error_widget.dart';
 import 'package:http/http.dart' as http;
+import '/API/api.dart';
+import '/services/url_scan.dart';
 import 'dart:convert';
 
 class BarcodeScannerSimple extends StatefulWidget {
@@ -118,6 +119,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
         isScanning = true;
         _barcode = barcodes.barcodes.firstOrNull;
       });
+
       if (_barcode != null && _barcode!.displayValue != null) {
         final Uri url = Uri.parse(_barcode!.displayValue!);
 
@@ -125,31 +127,41 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
         await showLoadingDialog();
 
         try {
+          // URL이 악성인지 검사
           final malicious = await urlCheck!.isMalicious(url.toString());
 
           // 위치 정보 가져오기
           final position = await _getUserLocation();
 
-          // 위치와 URL 정보를 서버에 전송
-          await _sendDataToServer(url, position);
+          // URL, 위치 정보, 및 악성 여부 데이터를 서버로 전송
+          final ApiService apiService =
+              ApiService(); // Define or import the ApiService class
+
+          final int? count = await apiService.sendUserLocationWithUrl(
+              position.latitude, position.longitude, url.toString());
 
           await Future.delayed(const Duration(seconds: 2));
           Navigator.of(context).pop();
 
-          // 위치 정보와 함께 결과 다이얼로그 표시
-          _showScanReportDialog(malicious, url, position);
+          if (count != null) {
+            // 결과 다이얼로그에 count 값 포함하여 표시
+            _showScanReportDialog(malicious, url, position, count);
+          } else {
+            _showErrorDialog('서버로 데이터를 보내는 데 실패했습니다.');
+          }
         } catch (e) {
           Navigator.of(context).pop();
           _showErrorDialog(e.toString());
         }
       }
+
       setState(() {
         isScanning = false; // 스캔 완료 후 스캔 상태 해제
       });
     }
   }
 
-  void _showScanReportDialog(int num, Uri url, Position position) {
+  void _showScanReportDialog(int num, Uri url, Position position, int count) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -161,14 +173,17 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Malicious: $num'),
-                const SizedBox(height: 10),
                 if (num > 0)
-                  Text(
-                      '악성코드가 발견되었습니다!!! ${position.latitude}, ${position.longitude}',
-                      style: const TextStyle(color: Colors.red)),
+                  const Text('악성코드가 발견되었습니다!!!!',
+                      style: TextStyle(color: Colors.red)),
                 if (num == 0)
-                  const Text('악성코드가 발견되지 않았습니다!',
+                  const Text('악성코드가 발견되지 않았습니다!!!!',
                       style: TextStyle(color: Colors.green)),
+                // 제보 횟수 표시
+                if (num > 0)
+                  Text('이 URL은 $count번째 제보입니다.',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
                 const Text('이 URL로 이동하시겠습니까?'),
               ],
             ),

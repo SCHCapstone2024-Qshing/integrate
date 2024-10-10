@@ -144,7 +144,7 @@ app.get("/cities", (req, res) => {
 // 새로운 도시를 추가하거나 count 값을 증가시키는 POST 엔드포인트
 app.post("/cities", (req, res) => {
   const { latitude, longitude, url } = req.body;
-
+  console.log("POST Cities 요청 받음!");
   // 입력값 검증
   if (!latitude || !longitude || !url) {
     return res
