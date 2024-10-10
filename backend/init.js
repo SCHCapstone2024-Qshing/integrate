@@ -6,13 +6,33 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
+// 두 좌표 간의 거리를 계산하는 함수 (단위: 미터)
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // 지구 반경 (단위: km)
+  const dLat = deg2rad(lat2 - lat1); // 위도의 차이
+  const dLon = deg2rad(lon2 - lon1); // 경도의 차이
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c * 1000; // 거리 (단위: 미터)
+  return distance;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
+
 // 주요 도시의 좌표 데이터
 const cities = [
   {
     latitude: 37.5665,
     longitude: 126.978,
     url: "https://en.wikipedia.org/wiki/Seoul",
-    count: 0,
+    count: 1,
   },
   // {
   //   latitude: 35.1796,
@@ -138,13 +158,18 @@ const cities = [
 
 // 모든 도시의 좌표를 반환하는 엔드포인트
 app.get("/cities", (req, res) => {
+  console.log("GET Cities 요청 받음!\n");
   res.json(cities);
 });
 
 // 새로운 도시를 추가하거나 count 값을 증가시키는 POST 엔드포인트
 app.post("/cities", (req, res) => {
   const { latitude, longitude, url } = req.body;
-  console.log("POST Cities 요청 받음!");
+  const proximityThreshold = 100; // 100미터 이내
+
+  console.log(req.body);
+  console.log("POST Cities 요청 받음!\n");
+
   // 입력값 검증
   if (!latitude || !longitude || !url) {
     return res
@@ -152,18 +177,27 @@ app.post("/cities", (req, res) => {
       .json({ error: "Missing latitude, longitude, or url" });
   }
 
-  // 동일한 URL이 이미 있는지 확인
-  const existingCity = cities.find((city) => city.url === url);
+  // 동일한 URL이 있는지 확인
+  const existingCity = cities.find((city) => {
+    // 동일한 URL이 있거나, 비슷한 위치에서 발견된 경우
+    const distance = getDistanceFromLatLonInKm(
+      latitude,
+      longitude,
+      city.latitude,
+      city.longitude
+    );
+    return city.url === url && distance <= proximityThreshold;
+  });
 
   if (existingCity) {
-    // URL이 이미 있으면 count 값을 증가시킴
+    // URL and 비슷한 위치가 이미 있으면 count 값을 증가시킴
     existingCity.count += 1;
     res.status(200).json({
-      message: `Location with URL ${url} already exists, count incremented`,
+      message: `Location with URL ${url} or nearby location already exists, count incremented`,
       location: existingCity,
     });
   } else {
-    // URL이 없으면 새로 추가
+    // URL과 위치가 모두 없으면 새로 추가
     const newCity = { latitude, longitude, url, count: 1 }; // 초기 count 값 1
     cities.push(newCity); // 배열에 객체 추가
     res.status(201).json({

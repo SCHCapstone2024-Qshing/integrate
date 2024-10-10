@@ -29,20 +29,23 @@ class MapSampleState extends State<MapSample> {
       if (data != null) {
         Set<Circle> loadedCircles = {};
 
-        // List로 처리
         for (var value in data) {
           double lat = value['latitude'];
           double lng = value['longitude'];
-          double radius = 1000.0; // 반경 값을 더 크게 설정해 확인
+          int count = value['count']; // count는 int형
+          double radius = count.toDouble() * 50; // count에 비례한 반경 값 설정
+
+          // 임계값 설정 (예: 최대 반경 1000으로 제한)
+          double maxRadius = 1000.0;
+          if (radius > maxRadius) {
+            radius = maxRadius;
+          }
           String url = value['url']; // URL 값 사용 가능
-
-          print("Adding circle for lat: $lat, lng: $lng, url: $url");
-
           // 원 추가
           loadedCircles.add(Circle(
             circleId: CircleId(url), // URL을 circleId로 사용
             center: LatLng(lat, lng),
-            radius: radius,
+            radius: radius, // 임계값 내의 반경 값 설정
             fillColor: Colors.red.withOpacity(0.5),
             strokeColor: Colors.red,
             strokeWidth: 2,
