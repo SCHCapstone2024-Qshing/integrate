@@ -1,10 +1,10 @@
-//갤러리에서 image 선택, qr코드 스캔해서 결과 보고서 보여주는 기능
-//barcode_scanner_simple.dart 파일 속 코드와 거의 동일
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '/services/url_scan.dart';
+import '../API/api.dart'; // API 파일 임포트
+import 'package:geolocator/geolocator.dart';
 
 class GalleryScan {
   final UrlScan urlCheck;
@@ -13,6 +13,7 @@ class GalleryScan {
     useNewCameraSelector: true,
     returnImage: true,
   );
+  final ApiService apiService = ApiService(); // API 서비스 인스턴스 생성
 
   GalleryScan(this.urlCheck);
 
@@ -54,8 +55,21 @@ class GalleryScan {
         // 로딩창 닫기
         Navigator.of(context).pop();
 
-        // 스캔 결과 다이얼로그 표시
-        _showScanReportDialog(context, malicious, Uri.parse(url));
+        // QR 코드가 악성일 경우 위치 정보와 URL 전송
+        if (malicious > 0) {
+          Position position = await _getCurrentLocation(); // 현재 위치 가져오기
+
+          // API 서버로 전송할 데이터 구성 (latitude, longitude, url) 및 count 값 확인
+          final int? count = await apiService.sendUserLocationWithUrl(
+              position.latitude, position.longitude, url);
+
+          if (count != null) {
+            // count 값과 함께 스캔 결과 다이얼로그 표시
+            _showScanReportDialog(context, malicious, Uri.parse(url), count);
+          } else {
+            _showErrorDialog(context, '위치 정보 및 URL 전송에 실패했습니다.');
+          }
+        }
       } catch (e) {
         Navigator.of(context).pop();
         _showErrorDialog(context, e.toString());
@@ -68,6 +82,11 @@ class GalleryScan {
         ),
       );
     }
+  }
+
+  // 현재 위치 가져오기
+  Future<Position> _getCurrentLocation() async {
+    return await apiService.getCurrentLocation(); // api.dart의 위치 정보 함수 사용
   }
 
   // 로딩 다이얼로그 표시
@@ -90,7 +109,8 @@ class GalleryScan {
   }
 
   // 스캔 결과 다이얼로그 표시 (Yes/No)
-  void _showScanReportDialog(BuildContext context, int malicious, Uri url) {
+  void _showScanReportDialog(
+      BuildContext context, int malicious, Uri url, int count) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -103,11 +123,16 @@ class GalleryScan {
             children: [
               Text('Malicious: $malicious'),
               if (malicious > 0)
-                const Text('악성코드가 발견되었습니다!',
+                const Text('악성코드가 발견되었습니다!!!!',
                     style: TextStyle(color: Colors.red)),
               if (malicious == 0)
-                const Text('악성코드가 발견되지 않았습니다!',
+                const Text('악성코드가 발견되지 않았습니다!!!!',
                     style: TextStyle(color: Colors.green)),
+              // 제보 횟수 표시
+              if (malicious > 0)
+                Text('이 URL은 $count번째 제보입니다.',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
               const Text('이 URL로 이동하시겠습니까?'),
             ],
           ),
@@ -133,8 +158,7 @@ class GalleryScan {
     );
   }
 
-//VirusTotal 보고서를 기반으로 사용자에게 스캔 결과를 표시
-//stats['malicious'] 값이 0보다 크면 악성 URL로 판단하고, 그렇지 않으면 안전한 URL로 판단
+  //VirusTotal 보고서를 기반으로 사용자에게 스캔 결과를 표시
   Future<void> _launchUrl(Uri url) async {
     if (!await launchUrl(url)) {
       throw Exception('Could not launch $url');

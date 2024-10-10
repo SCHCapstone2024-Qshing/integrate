@@ -22,9 +22,9 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/page/barcode_scanner_simple.dart';
 import '/services/url_scan.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/page/MapSample.dart';
 import '/page/gallery_scan.dart'; // 새로 만든 gallery_scan.dart 파일 import
 import 'dart:async';

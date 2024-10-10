@@ -1,23 +1,15 @@
-// buildBarcode 함수에서 url 출력하는 함수 사용 중
-// 해당 함수 내부의 launchUrl 함수를 사용해 해당 url을 처리할 수 있을 것으로 보임
-//스캔한 URL을 VirusTotal에 제출하여 스캔한 보고서를 사용자에게 표시하는 기능 추가
-
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '/page/error/scanner_error_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '/services/url_scan.dart';
-
-//고쳐야할 것. qr code 스캔이 되고 작업을 진행 중인데도 계속해서 qr code를 스캔. 알림창이 여러개가 뜸.(스캔 이후 카메라 스탑시키기)
-//controller 추가(작동여부 불확실)
-//카메라로 qrcode 스캔시 _showErrorDialog 함수 실행 됨
-//링크 안전 여부 알려준 후 접속 할 건지 yes/ no 버튼 만들기
-//QR 코드가 스캔된 후 controller.stop()를 호출하여 카메라가 반복적으로 인식하는 문제를 해결하려함. +추가된 부분에 표시함
+import 'package:geolocator/geolocator.dart'; // 위치 정보 가져오기
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class BarcodeScannerSimple extends StatefulWidget {
   final UrlScan urlCheck;
   const BarcodeScannerSimple({required this.urlCheck, super.key});
-  //const BarcodeScannerSimple({Key? key, required this.urlCheck}) : super(key: key);
 
   @override
   State<BarcodeScannerSimple> createState() => _BarcodeScannerSimpleState();
@@ -25,17 +17,66 @@ class BarcodeScannerSimple extends StatefulWidget {
 
 class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
   Barcode? _barcode;
+  bool isScanning = false; // 스캔 중인지 여부 추가
   UrlScan? urlCheck;
-  final MobileScannerController controller =
-      MobileScannerController(); //mobilescannercontroller 추가된부분
-
-  //late VirusTotalService _virusTotalService;
+  final MobileScannerController controller = MobileScannerController();
 
   @override
   void initState() {
     urlCheck = UrlScan();
     urlCheck!.initState();
     super.initState();
+  }
+
+  // 사용자 위치 가져오기
+  Future<Position> _getUserLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('Location permissions are permanently denied');
+    }
+
+    return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+  }
+
+  // URL과 위치 정보를 서버로 보내기
+  Future<void> _sendDataToServer(Uri url, Position position) async {
+    try {
+      final data = {
+        'url': url.toString(),
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      };
+
+      final response = await http.post(
+        Uri.parse('https://172.30.1.86/cities'), // 백엔드 API 엔드포인트
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 200) {
+        print('Data sent successfully');
+      } else {
+        print('Failed to send data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error sending data to server: $e');
+    }
   }
 
   Widget _buildBarcode(Barcode? value) {
@@ -72,45 +113,43 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
   }
 
   void _handleBarcode(BarcodeCapture barcodes) async {
-    if (mounted) {
+    if (mounted && !isScanning) {
       setState(() {
+        isScanning = true;
         _barcode = barcodes.barcodes.firstOrNull;
       });
       if (_barcode != null && _barcode!.displayValue != null) {
         final Uri url = Uri.parse(_barcode!.displayValue!);
 
-        controller.stop(); // 추가된 부분, 카메라 멈추기
-
-        // 로딩 다이얼로그 표시
+        controller.stop(); // 카메라 멈추기
         await showLoadingDialog();
 
         try {
           final malicious = await urlCheck!.isMalicious(url.toString());
-          // final scanResult = await _virusTotalService.scanUrl(url.toString());
-          // final analysisId = scanResult['data']['id'];
-          // //전처리 필요
-          // final report = await _virusTotalService.getUrlScanReport(analysisId);
 
-          // 2초 대기
+          // 위치 정보 가져오기
+          final position = await _getUserLocation();
+
+          // 위치와 URL 정보를 서버에 전송
+          await _sendDataToServer(url, position);
+
           await Future.delayed(const Duration(seconds: 2));
-
-          // 다이얼로그 닫기
           Navigator.of(context).pop();
 
-          _showScanReportDialog(malicious, url);
+          // 위치 정보와 함께 결과 다이얼로그 표시
+          _showScanReportDialog(malicious, url, position);
         } catch (e) {
-          // 다이얼로그 닫기
           Navigator.of(context).pop();
           _showErrorDialog(e.toString());
         }
       }
+      setState(() {
+        isScanning = false; // 스캔 완료 후 스캔 상태 해제
+      });
     }
   }
 
-  void _showScanReportDialog(int num, Uri url) {
-    // final attributes = report['data']['attributes'];
-    // final stats = attributes['stats'];
-//변수 이름 data.attribute.last_analysis_stats.harmless
+  void _showScanReportDialog(int num, Uri url, Position position) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -124,12 +163,12 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
                 Text('Malicious: $num'),
                 const SizedBox(height: 10),
                 if (num > 0)
-                  const Text('악성코드가 발견되었습니다!',
-                      style: TextStyle(color: Colors.red)),
+                  Text(
+                      '악성코드가 발견되었습니다!!! ${position.latitude}, ${position.longitude}',
+                      style: const TextStyle(color: Colors.red)),
                 if (num == 0)
                   const Text('악성코드가 발견되지 않았습니다!',
                       style: TextStyle(color: Colors.green)),
-                //접속하시겠습니까? yes/no 버튼
                 const Text('이 URL로 이동하시겠습니까?'),
               ],
             ),
@@ -137,15 +176,15 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
           actions: [
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-                await _launchUrl(url); // Yes를 누르면 URL 열기
+                Navigator.of(context).pop();
+                await _launchUrl(url); // URL 열기
                 controller.start(); // 카메라 재시작
               },
               child: const Text('Yes'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
+                Navigator.of(context).pop();
                 controller.start(); // 카메라 재시작
               },
               child: const Text('No'),
@@ -156,8 +195,6 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
     ).then((_) {});
   }
 
-//VirusTotal 보고서를 기반으로 사용자에게 스캔 결과를 표시
-//stats['malicious'] 값이 0보다 크면 악성 URL로 판단하고, 그렇지 않으면 안전한 URL로 판단
   Future<void> _launchUrl(Uri url) async {
     if (!await launchUrl(url)) {
       throw Exception('Could not launch $url');
@@ -192,7 +229,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
       body: Stack(
         children: [
           MobileScanner(
-            controller: controller, // 추가된 부분
+            controller: controller,
             onDetect: _handleBarcode,
             errorBuilder: (context, error, child) {
               return ScannerErrorWidget(error: error);
