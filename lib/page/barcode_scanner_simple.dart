@@ -130,24 +130,31 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
           // URL이 악성인지 검사
           final malicious = await urlCheck!.isMalicious(url.toString());
 
-          // 위치 정보 가져오기
-          final position = await _getUserLocation();
+          if (malicious > 0) {
+            // **악성일 경우에만 데이터 전송**
+            // 위치 정보 가져오기
+            final position = await _getUserLocation();
 
-          // URL, 위치 정보, 및 악성 여부 데이터를 서버로 전송
-          final ApiService apiService =
-              ApiService(); // Define or import the ApiService class
+            // URL, 위치 정보, 및 악성 여부 데이터를 서버로 전송
+            final ApiService apiService = ApiService();
 
-          final int? count = await apiService.sendUserLocationWithUrl(
-              position.latitude, position.longitude, url.toString());
+            final int? count = await apiService.sendUserLocationWithUrl(
+                position.latitude, position.longitude, url.toString());
 
-          await Future.delayed(const Duration(seconds: 2));
-          Navigator.of(context).pop();
-
-          if (count != null) {
-            // 결과 다이얼로그에 count 값 포함하여 표시
-            _showScanReportDialog(malicious, url, position, count);
+            if (count != null) {
+              // 결과 다이얼로그에 count 값 포함하여 표시
+              await Future.delayed(const Duration(seconds: 2));
+              Navigator.of(context).pop();
+              _showScanReportDialog(malicious, url, position, count);
+            } else {
+              _showErrorDialog('서버로 데이터를 보내는 데 실패했습니다.');
+            }
           } else {
-            _showErrorDialog('서버로 데이터를 보내는 데 실패했습니다.');
+            // 정상 URL일 경우 알림창 표시하고 서버로 데이터 전송하지 않음
+            await Future.delayed(const Duration(seconds: 2));
+            Navigator.of(context).pop();
+            _showScanReportDialog(
+                malicious, url, null, 0); // 정상일 경우 count는 0으로 표시
           }
         } catch (e) {
           Navigator.of(context).pop();
@@ -161,7 +168,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
     }
   }
 
-  void _showScanReportDialog(int num, Uri url, Position position, int count) {
+  void _showScanReportDialog(int num, Uri url, Position? position, int count) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -179,10 +186,16 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
                 if (num == 0)
                   const Text('악성코드가 발견되지 않았습니다!!!!',
                       style: TextStyle(color: Colors.green)),
-                // 제보 횟수 표시
-                if (num > 0)
-                  Text('이 URL은 $count번째 제보입니다.',
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                // 위치 정보가 있을 경우에만 위치 정보와 제보 횟수 표시
+                if (position != null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                          '이 URL은 $count번째 제보입니다. (${position.latitude}, ${position.longitude})',
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 const SizedBox(height: 10),
                 const Text('이 URL로 이동하시겠습니까?'),
               ],
