@@ -65,7 +65,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
       };
 
       final response = await http.post(
-        Uri.parse('https://172.30.1.86/cities'), // 백엔드 API 엔드포인트
+        Uri.parse('https://192.168.1.5/cities'), // 백엔드 API 엔드포인트
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(data),
       );
@@ -179,6 +179,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text('URL: $url'),
                 Text('Malicious: $num'),
                 if (num > 0)
                   const Text('악성코드가 발견되었습니다!!!!',

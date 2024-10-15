@@ -18,6 +18,9 @@
 //10.5 맵 연동 시작
 //google_maps_flutter: ^2.6.1 pubspec.yaml 파일에 추가. backend 폴더 추가. MapSample.dart 파일 추가
 //main file 수정(노션에 나와있던 app/ 밑 파일도 일부 수정)
+//10.15  갤러리로 스캔 시 url이 나오지 않아 스캔 대상이 무엇인지 확인이 힘듬(수정 완료)
+//  앱을 키고 첫 번째로 악성 url을 입력시켰을 때 malicious 값이 0이 나오는 경우가 있음. 한 번 더 확인이 필요한데 virustotal에서 0을 리턴한 것 같음
+//      확인해보니 virustotal의 responce status가 status: queued 로 되어있는데 리턴으로 받아오는 경우가 있을때 0을 리턴함을 알아냄. 상태가 queued일경우 다시 요청하는 코드 작성
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';

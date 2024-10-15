@@ -121,6 +121,7 @@ class GalleryScan {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('URL: $url'),
               Text('Malicious: $malicious'),
               if (malicious > 0)
                 const Text('악성코드가 발견되었습니다!!!!',
