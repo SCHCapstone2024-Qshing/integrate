@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
 class ApiService {
-  final String baseUrl = "http://192.168.0.15:3000"; // API 서버 URL
+  final String baseUrl = "http://34.29.7.131:3000"; // API 서버 URL
 
   // GET 요청: 모든 도시의 좌표 목록을 가져옴
   Future<List<dynamic>?> fetchCities() async {

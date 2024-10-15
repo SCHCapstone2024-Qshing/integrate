@@ -65,7 +65,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
       };
 
       final response = await http.post(
-        Uri.parse('https://192.168.0.15/cities'), // 백엔드 API 엔드포인트
+        Uri.parse('http://34.29.7.131:3000/cities'), // 백엔드 API 엔드포인트
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(data),
       );
