@@ -69,6 +69,12 @@ class GalleryScan {
           } else {
             _showErrorDialog(context, '위치 정보 및 URL 전송에 실패했습니다.');
           }
+        } else {
+          // 정상 URL일 경우 알림창 표시하고 서버로 데이터 전송하지 않음
+          await Future.delayed(const Duration(seconds: 2));
+          Navigator.of(context).pop();
+          _showScanReportDialog(
+              context, malicious, Uri.parse(url), 0); // 정상일 경우 count는 0으로 표시
         }
       } catch (e) {
         Navigator.of(context).pop();
