@@ -13,6 +13,7 @@ class GalleryScan {
     useNewCameraSelector: true,
     returnImage: true,
   );
+
   final ApiService apiService = ApiService(); // API 서비스 인스턴스 생성
 
   GalleryScan(this.urlCheck);
@@ -21,7 +22,6 @@ class GalleryScan {
   Future<void> imageSelect(BuildContext context) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-
     if (image == null) {
       return;
     }
@@ -72,7 +72,7 @@ class GalleryScan {
         } else {
           // 정상 URL일 경우 알림창 표시하고 서버로 데이터 전송하지 않음
           await Future.delayed(const Duration(seconds: 2));
-          Navigator.of(context).pop();
+          //Navigator.of(context).pop();
           _showScanReportDialog(
               context, malicious, Uri.parse(url), 0); // 정상일 경우 count는 0으로 표시
         }
@@ -148,14 +148,14 @@ class GalleryScan {
               onPressed: () async {
                 Navigator.of(context).pop(); // 다이얼로그 닫기
                 await _launchUrl(url); // Yes를 누르면 URL 열기
-                controller.start(); // 카메라 재시작
+                //controller.start(); // 카메라 재시작
               },
               child: const Text('Yes'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // 다이얼로그 닫기
-                controller.start(); // 카메라 재시작
+                //controller.start(); // 카메라 재시작
               },
               child: const Text('No'),
             ),
