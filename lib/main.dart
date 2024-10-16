@@ -29,8 +29,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/page/barcode_scanner_simple.dart';
 import '/services/url_scan.dart';
 import '/page/MapSample.dart';
-import '/page/gallery_scan.dart'; // 새로 만든 gallery_scan.dart 파일 import
-import 'dart:async';
+import '/page/gallery_scan.dart';
+import 'package:geolocator/geolocator.dart'; // 위치 정보를 위한 패키지
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -56,29 +56,56 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   @override
   void initState() {
-    super.initState(); // Call super.initState first
+    super.initState();
     urlCheck = UrlScan();
-    urlCheck.initState(); // Initialize your UrlScan
+    urlCheck.initState();
     galleryScan = GalleryScan(urlCheck);
   }
 
+  Future<Position> _getUserLocation() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('위치 권한이 거부되었습니다.');
+      }
+    }
+    return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> imageSelect(BuildContext context) async {
-    //setState();
     final MobileScannerController controller = MobileScannerController(
       torchEnabled: true,
       useNewCameraSelector: true,
       returnImage: true,
     );
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-    );
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image == null) {
       return;
     }
-    final BarcodeCapture? barcodes = await controller.analyzeImage(
-      image.path,
-    );
+    final BarcodeCapture? barcodes = await controller.analyzeImage(image.path);
     if (!context.mounted) {
       return;
     }
@@ -89,7 +116,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             Uri.parse(barcodes.barcodes.firstOrNull!.displayValue!);
         url = url0.toString();
       } catch (err) {
-        return; //url이 아닐 경우 따로 작성해야함.
+        return; // URL이 아닐 경우 따로 처리
       }
     }
     if (barcodes != null) {
@@ -98,9 +125,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       if (!currentContext.mounted) return;
       ScaffoldMessenger.of(currentContext).showSnackBar(
         SnackBar(
-          content: Text(
-            'URL: $url, malicious: $malicious',
-          ),
+          content: Text('URL: $url, malicious: $malicious'),
           backgroundColor: Colors.green,
         ),
       );
@@ -116,7 +141,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Define button size for consistent appearance
     const buttonWidth = 120.0;
     const buttonHeight = 50.0;
     const buttonOpacity = 0.5; // 50% opacity
@@ -149,12 +173,23 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     width: buttonWidth,
                     height: buttonHeight,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const MapSample()),
-                        );
+                      onPressed: () async {
+                        try {
+                          Position position =
+                              await _getUserLocation(); // 위치 정보 가져오기
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MapSample(
+                                latitude: position.latitude, // 위도 전달
+                                longitude: position.longitude, // 경도 전달
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          _showErrorDialog(
+                              '위치를 가져오는 데 실패했습니다: ${e.toString()}');
+                        }
                       },
                       child: const Text('Map'),
                     ),
@@ -164,24 +199,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class SecondPage extends StatelessWidget {
-  const SecondPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Second Page'),
-      ),
-      body: const Center(
-        child: Text(
-          'Welcome to the Second Page!',
-          style: TextStyle(fontSize: 24),
-        ),
       ),
     );
   }

@@ -3,8 +3,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '/services/url_scan.dart';
-import '../API/api.dart'; // API 파일 임포트
+import '../API/api.dart';
 import 'package:geolocator/geolocator.dart';
+import '/page/MapSample.dart';
 
 class GalleryScan {
   final UrlScan urlCheck;
@@ -14,11 +15,10 @@ class GalleryScan {
     returnImage: true,
   );
 
-  final ApiService apiService = ApiService(); // API 서비스 인스턴스 생성
+  final ApiService apiService = ApiService();
 
   GalleryScan(this.urlCheck);
 
-  // 이미지 선택 후 QR 코드 스캔
   Future<void> imageSelect(BuildContext context) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
@@ -26,7 +26,6 @@ class GalleryScan {
       return;
     }
 
-    // 선택한 이미지에서 QR 코드 분석
     final BarcodeCapture? barcodes = await controller.analyzeImage(image.path);
 
     if (!context.mounted) {
@@ -40,47 +39,47 @@ class GalleryScan {
             Uri.parse(barcodes.barcodes.firstOrNull!.displayValue!);
         url = url0.toString();
       } catch (err) {
-        return; // QR 코드가 URL이 아닐 경우 처리
+        return; // URL이 유효하지 않을 경우 무시합니다.
       }
     }
 
     if (barcodes != null) {
-      // 로딩창 표시
       await _showLoadingDialog(context);
 
       try {
-        // URL 안전성 검사
         final malicious = await urlCheck.isMalicious(url);
 
-        // 로딩창 닫기
-        Navigator.of(context).pop();
+        // async 작업 후 context.mounted 체크
+        if (!context.mounted) return;
+        Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
 
-        // QR 코드가 악성일 경우 위치 정보와 URL 전송
         if (malicious > 0) {
-          Position position = await _getCurrentLocation(); // 현재 위치 가져오기
+          Position position = await _getCurrentLocation();
 
-          // API 서버로 전송할 데이터 구성 (latitude, longitude, url) 및 count 값 확인
+          if (!context.mounted) return;
           final int? count = await apiService.sendUserLocationWithUrl(
               position.latitude, position.longitude, url);
 
+          if (!context.mounted) return;
+
           if (count != null) {
-            // count 값과 함께 스캔 결과 다이얼로그 표시
-            _showScanReportDialog(context, malicious, Uri.parse(url), count);
+            _showScanReportDialog(
+                context, malicious, Uri.parse(url), count, position);
           } else {
-            _showErrorDialog(context, '위치 정보 및 URL 전송에 실패했습니다.');
+            _showErrorDialog(context, '서버로 데이터를 보내는 데 실패했습니다.');
           }
         } else {
-          // 정상 URL일 경우 알림창 표시하고 서버로 데이터 전송하지 않음
           await Future.delayed(const Duration(seconds: 2));
-          //Navigator.of(context).pop();
-          _showScanReportDialog(
-              context, malicious, Uri.parse(url), 0); // 정상일 경우 count는 0으로 표시
+          if (!context.mounted) return;
+          _showScanReportDialog(context, malicious, Uri.parse(url), 0, null);
         }
       } catch (e) {
+        if (!context.mounted) return;
         Navigator.of(context).pop();
         _showErrorDialog(context, e.toString());
       }
     } else {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('QR 코드를 찾을 수 없습니다.'),
@@ -90,12 +89,10 @@ class GalleryScan {
     }
   }
 
-  // 현재 위치 가져오기
   Future<Position> _getCurrentLocation() async {
-    return await apiService.getCurrentLocation(); // api.dart의 위치 정보 함수 사용
+    return await apiService.getCurrentLocation();
   }
 
-  // 로딩 다이얼로그 표시
   Future<void> _showLoadingDialog(BuildContext context) async {
     showDialog(
       context: context,
@@ -114,48 +111,50 @@ class GalleryScan {
     );
   }
 
-  // 스캔 결과 다이얼로그 표시 (Yes/No)
-  void _showScanReportDialog(
-      BuildContext context, int malicious, Uri url, int count) {
+  void _showScanReportDialog(BuildContext context, int malicious, Uri url,
+      int count, Position? position) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
           title: const Text('VirusTotal Scan Report'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('URL: $url'),
-              Text('Malicious: $malicious'),
-              if (malicious > 0)
-                const Text('악성코드가 발견되었습니다!!!!',
-                    style: TextStyle(color: Colors.red)),
-              if (malicious == 0)
-                const Text('악성코드가 발견되지 않았습니다!!!!',
-                    style: TextStyle(color: Colors.green)),
-              // 제보 횟수 표시
-              if (malicious > 0)
-                Text('이 URL은 $count번째 제보입니다.',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              const Text('이 URL로 이동하시겠습니까?'),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('URL: $url'),
+                Text('악성 여부: $malicious'),
+                if (malicious > 0)
+                  const Text('악성코드가 발견되었습니다!',
+                      style: TextStyle(color: Colors.red)),
+                if (malicious == 0)
+                  const Text('악성코드가 발견되지 않았습니다.',
+                      style: TextStyle(color: Colors.green)),
+                if (position != null)
+                  Text(
+                      '이 URL은 $count번째 제보입니다. (위도: ${position.latitude}, 경도: ${position.longitude})',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                const Text('현재 위치를 지도에 표시하시겠습니까?'),
+              ],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-                await _launchUrl(url); // Yes를 누르면 URL 열기
-                //controller.start(); // 카메라 재시작
+                if (position != null) {
+                  Navigator.of(context).pop(); // 스캔 리포트 다이얼로그 닫기
+                  await _navigateToMap(context, position, url);
+                }
               },
               child: const Text('Yes'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-                //controller.start(); // 카메라 재시작
+                Navigator.of(context).pop(); // 스캔 리포트 다이얼로그 닫기
+                // URL 연결 여부 확인 다이얼로그 호출
+                _showLaunchUrlConfirmationDialog(context, url);
               },
               child: const Text('No'),
             ),
@@ -165,14 +164,59 @@ class GalleryScan {
     );
   }
 
-  //VirusTotal 보고서를 기반으로 사용자에게 스캔 결과를 표시
+  Future<void> _navigateToMap(
+      BuildContext context, Position position, Uri url) async {
+    await Navigator.of(context)
+        .push(
+      MaterialPageRoute(
+        builder: (context) => MapSample(
+            latitude: position.latitude, longitude: position.longitude),
+      ),
+    )
+        .then((_) {
+      if (context.mounted) {
+        _showLaunchUrlConfirmationDialog(context, url);
+      }
+    });
+  }
+
+  Future<void> _showLaunchUrlConfirmationDialog(BuildContext context, Uri url) {
+    if (!context.mounted) {
+      return Future.value(); // context가 유효하지 않으면 빈 Future 반환
+    }
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('URL로 이동하시겠습니까?'),
+          content: Text('사이트: $url'),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // URL 다이얼로그 닫기
+                await _launchUrl(url);
+              },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // URL 다이얼로그 닫기
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _launchUrl(Uri url) async {
     if (!await launchUrl(url)) {
       throw Exception('Could not launch $url');
     }
   }
 
-  // 에러 다이얼로그 표시
   void _showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,

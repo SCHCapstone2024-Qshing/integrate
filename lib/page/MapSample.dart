@@ -5,7 +5,10 @@ import '../API/api.dart'; // API 파일 임포트
 import 'package:intl/intl.dart'; // 날짜 포맷을 위한 패키지
 
 class MapSample extends StatefulWidget {
-  const MapSample({super.key});
+  final double latitude; // 위도
+  final double longitude; // 경도
+
+  const MapSample({super.key, required this.latitude, required this.longitude});
 
   @override
   State<MapSample> createState() => MapSampleState();
@@ -15,13 +18,17 @@ class MapSampleState extends State<MapSample> {
   GoogleMapController? mapController;
   Set<Circle> _circles = {}; // 원을 저장할 Set 초기화
   Set<Marker> _markers = {}; // 마커를 저장할 Set 초기화
-  final LatLng _center = const LatLng(37.5665, 126.9780); // 기본 중심 좌표 (서울 시청)
+
+  // 중심 좌표를 매개변수로 받는 위도와 경도 값으로 초기화
+  late final LatLng _center;
+
   final ApiService apiService = ApiService(); // API 서비스 인스턴스 생성
   Map<String, String> circleInfo = {}; // 원에 대한 정보를 저장할 Map
 
   @override
   void initState() {
     super.initState();
+    _center = LatLng(widget.latitude, widget.longitude); // 매개변수로 받은 위도, 경도로 초기화
     _loadCirclesAndMarkersFromApi(); // 원과 마커 데이터를 불러오기
   }
 

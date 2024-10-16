@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '/API/api.dart';
 import '/services/url_scan.dart';
 import 'dart:convert';
+import '/page/MapSample.dart';
 
 class BarcodeScannerSimple extends StatefulWidget {
   final UrlScan urlCheck;
@@ -187,21 +188,62 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
                 if (num == 0)
                   const Text('악성코드가 발견되지 않았습니다!!!!',
                       style: TextStyle(color: Colors.green)),
-                // 위치 정보가 있을 경우에만 위치 정보와 제보 횟수 표시
                 if (position != null)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                          '이 URL은 $count번째 제보입니다. (${position.latitude}, ${position.longitude})',
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                        '이 URL은 $count번째 제보입니다. (${position.latitude}, ${position.longitude})',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                 const SizedBox(height: 10),
-                const Text('이 URL로 이동하시겠습니까?'),
+                const Text('현재 위치를 지도에 표시하시겠습니까?'),
               ],
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+                // 지도로 직접 이동
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MapSample(
+                      latitude: position!.latitude,
+                      longitude: position.longitude,
+                    ), // 좌표를 MapSample로 전달
+                  ),
+                ).then((_) {
+                  // 지도 화면이 닫힌 후 사이트로 이동할지 여부 묻기
+                  _showSiteLaunchDialog(url);
+                });
+              },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+                _showSiteLaunchDialog(url); // 사이트로 이동할지 묻기
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSiteLaunchDialog(Uri url) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('사이트로 이동'),
+          content: const Text('이 URL로 이동하시겠습니까?'),
           actions: [
             TextButton(
               onPressed: () async {
@@ -221,7 +263,7 @@ class _BarcodeScannerSimpleState extends State<BarcodeScannerSimple> {
           ],
         );
       },
-    ).then((_) {});
+    );
   }
 
   Future<void> _launchUrl(Uri url) async {
