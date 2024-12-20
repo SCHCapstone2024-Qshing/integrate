@@ -2,21 +2,28 @@
 
 ## main page
 
-![alt text](https://github.com/SCHCapstone2024-Qshing/virustotal_api/blob/main/image/123.png)
+![123](./image/123.jpg)
+
 **메인 실행 코드는 lib/main.dart입니다.**
 
 ## 사용한 패키지
 
 mobile_scanner
+
 pub.dev: https://pub.dev/packages/mobile_scanner
+
 github: https://github.com/juliansteenbakker/mobile_scanner
 
 ## 추가로 설치가 필요한 패키지(더 있을 수도 있음)
 
 image_picker: ^1.0.4
+
 flutter_dotenv(버전 상관없음)
+
 intl: ^0.17.0
+
 geolocator: ^9.0.0
+
 google_maps_flutter: ^2.6.1
 
 ---
@@ -38,7 +45,7 @@ VIRUSTOTALAPI=API_KEY
 
 ## 2. Google Map API
 
-![alt text](https://github.com/SCHCapstone2024-Qshing/virustotal_api/blob/main/image/map_image.jpg)
+![map_image](./image/map_image.jpg)
 
 1. /android/local.properties 파일 수정
 
